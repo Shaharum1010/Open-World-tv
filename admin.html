@@ -51,6 +51,8 @@ video{width:100%;max-height:220px;background:#000;border-radius:8px;margin-top:8
     </div>
     <label>অবস্থা</label>
     <select id="active"><option value="true">চালু</option><option value="false">বন্ধ</option></select>
+    <label>খোলার ধরন</label>
+    <select id="ext"><option value="false">অ্যাপের প্লেয়ারে চালান</option><option value="true">অফিসিয়াল ওয়েবসাইটে খুলুন</option></select>
     <div class="row">
       <button type="button" id="test">লিংক পরীক্ষা করুন</button>
       <button class="p" id="save">সংরক্ষণ করুন</button>
@@ -110,7 +112,7 @@ $("#login").addEventListener("submit", async e => {
 $("#f").addEventListener("submit", async e => {
   e.preventDefault();
   const c = { name: $("#name").value.trim(), logo: $("#logo").value.trim(), url: $("#url").value.trim(),
-    category: $("#category").value.trim(), order: +$("#order").value || 0, active: $("#active").value === "true" };
+    category: $("#category").value.trim(), order: +$("#order").value || 0, active: $("#active").value === "true", ext: $("#ext").value === "true" };
   try {
     if (editId) await api("PUT", "channels/" + editId, c); else await api("POST", "channels", c);
     say(editId ? "আপডেট হয়েছে।" : "চ্যানেল যোগ হয়েছে।");
@@ -120,6 +122,12 @@ $("#f").addEventListener("submit", async e => {
 
 $("#test").addEventListener("click", () => {
   const u = $("#url").value.trim(), v = $("#tv"); if (!u) return say("আগে স্ট্রিম লিংক দিন।", 1);
+  try {
+    const x = new URL(u), h = x.hostname.replace("www.", "");
+    if (h === "youtu.be" || h.endsWith("youtube.com")) {
+      return say("এটি YouTube লিংক। অ্যাপে চ্যানেলটি খুলে দেখুন, ভিডিওটি এম্বেড অনুমতি না দিলে চলবে না।");
+    }
+  } catch (e) {}
   v.hidden = false; say("পরীক্ষা চলছে…");
   if (hls) hls.destroy();
   if (window.Hls && Hls.isSupported()) {
@@ -139,6 +147,7 @@ $("#list").addEventListener("click", async e => {
       editId = id;
       for (const k of ["name", "logo", "url", "category", "order"]) $("#" + k).value = c[k] ?? "";
       $("#active").value = String(c.active !== false);
+      $("#ext").value = String(!!c.ext);
       say("এডিট করছেন: " + c.name); window.scrollTo({ top: 0, behavior: "smooth" });
     }
   } catch (x) { say(x.message, 1); }
